@@ -1,31 +1,20 @@
-import yaml
+# -------------------------------
+# data_extraction.py  (ETL layer)
+# -------------------------------
+"""Extract tables from the raw sales database."""
+from __future__ import annotations
+
 import pandas as pd
-from sqlalchemy import create_engine, inspect
+
+# local import (relative)
+from data_utilis import DatabaseConnector
+
 
 class DataExtractor:
-    def __init__(self):
-        pass
+    """Provide methods for pulling tables into pandas DataFrames."""
 
-    def read_db_creds(self, file_path):
-        with open(file_path, 'r') as file:
-            creds = yaml.safe_load(file)
-        return creds
-
-    def init_db_engine(self, creds):
-        db_url = f"postgresql://{creds['RDS_USER']}:{creds['RDS_PASSWORD']}@{creds['RDS_HOST']}:{creds['RDS_PORT']}/{creds['RDS_DATABASE']}"
-        engine = create_engine(db_url)
-        return engine
-
-    def list_db_tables(self, engine):
-        inspector = inspect(engine)
-        table_names = inspector.get_table_names()
-        return table_names
-
-    def read_rds_table(self, table_name):
-        engine = self.init_db_engine()
-        df = pd.read_sql_table(table_name, engine)
-        return df
-
-     
-
-    
+    def read_rds_table(self, db_conn: DatabaseConnector, table_name: str) -> pd.DataFrame:
+        """Return the specified table as a DataFrame."""
+        if table_name not in db_conn.list_db_tables():
+            raise ValueError(f"Table '{table_name}' does not exist in the database.")
+        return pd.read_sql_table(table_name, con=db_conn.engine)
